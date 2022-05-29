@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.4.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <TestFragmentController guiclass="TestFragmentControllerGui" testclass="TestFragmentController" testname="Test Fragment" enabled="false">
+        <stringProp name="TestPlan.comments">File name with API requests in CSV format should come from variable:  STEPS_CSV_FILENAME
+
+</stringProp>
+      </TestFragmentController>
+      <hashTree>
+        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="If Controller Verify API_TOKEN available" enabled="true">
+          <stringProp name="IfController.condition">${__jexl3(&quot;${API_TOKEN}&quot; != &quot;NONE&quot;)}</stringProp>
+          <boolProp name="IfController.evaluateAll">false</boolProp>
+          <boolProp name="IfController.useExpression">true</boolProp>
+        </IfController>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="Accept-Encoding" elementType="Header">
+                <stringProp name="Header.name">Accept-Encoding</stringProp>
+                <stringProp name="Header.value"> gzip, deflate, br</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <LoopController guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+            <boolProp name="LoopController.continue_forever">true</boolProp>
+            <stringProp name="LoopController.loops">${STEPS_LIMIT}</stringProp>
+          </LoopController>
+          <hashTree>
+            <CounterConfig guiclass="CounterConfigGui" testclass="CounterConfig" testname="Counter" enabled="true">
+              <stringProp name="CounterConfig.start">1</stringProp>
+              <stringProp name="CounterConfig.end"></stringProp>
+              <stringProp name="CounterConfig.incr">1</stringProp>
+              <stringProp name="CounterConfig.name">GROUP_COUNTER</stringProp>
+              <stringProp name="CounterConfig.format"></stringProp>
+              <boolProp name="CounterConfig.per_user">true</boolProp>
+              <stringProp name="TestPlan.comments"> !!! TODO hardcoded number of steps is 8 should be fixed !!! </stringProp>
+              <boolProp name="CounterConfig.reset_on_tg_iteration">true</boolProp>
+            </CounterConfig>
+            <hashTree/>
+            <com.blazemeter.jmeter.http.ParallelHTTPSampler guiclass="com.blazemeter.jmeter.http.ParallelHTTPSamplerGui" testclass="com.blazemeter.jmeter.http.ParallelHTTPSampler" testname="Embedded/Ajax API Requests [GET]" enabled="true">
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                <collectionProp name="Arguments.arguments"/>
+              </elementProp>
+              <boolProp name="HTTPSampler.image_parser">true</boolProp>
+              <boolProp name="HTTPSampler.concurrentDwn">true</boolProp>
+              <collectionProp name="urls"/>
+              <stringProp name="TestPlan.comments">Depends on steps in CSV file, name of sampler will be replaced to GroupName, requests URLs updated from the group.
+API requests in CSV format should come from variable:  STEPS_CSV_FILENAME</stringProp>
+            </com.blazemeter.jmeter.http.ParallelHTTPSampler>
+            <hashTree>
+              <BeanShellPreProcessor guiclass="TestBeanGUI" testclass="BeanShellPreProcessor" testname="BeanShell PreProcessor" enabled="true">
+                <stringProp name="filename"></stringProp>
+                <stringProp name="parameters"></stringProp>
+                <boolProp name="resetInterpreter">true</boolProp>
+                <stringProp name="script">import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.List;
+import java.nio.charset.StandardCharsets;
+import org.apache.jmeter.testelement.property.CollectionProperty;
+
+log.info(&quot;Prepocessor started: prepare embedded API requests from CSV&quot;);
+
+String fileName;
+String counter;
+String counterLimit;
+
+try {
+    counter = vars.get(&quot;GROUP_COUNTER&quot;);
+    counterLimit = vars.get(&quot;STEPS_LIMIT&quot;);
+    fileName = vars.get(&quot;STEPS_CSV_FILENAME&quot;);
+    log.info(&quot;GROUP_COUNTER:&quot; + counter);
+    log.info(&quot;STEPS_CSV_FILENAME:&quot; + fileName);
+    log.info(&quot;STEPS_LIMIT:&quot; + counterLimit);
+} 
+catch ( Exception ex) {
+    log.info(&quot;Exception: &quot; + ex);
+    ResponseCode = 580;
+    ResponseMessage = &quot;FAILED BeanShell script - cannot read variables&quot;;
+    IsSuccess = false;
+}
+
+BufferedReader br;
+Path pathToFile;
+String groupCounter;
+String requestUrl;
+int lineCounter = 0;
+try {
+    pathToFile = Paths.get(fileName, new String[0]);
+    br = Files.newBufferedReader(pathToFile, StandardCharsets.UTF_8);
+    String line = br.readLine();
+    int subPagesCounter = 0;
+    if (counter != null){
+        log.info(&quot;Clearing sampler data, due to issue with sampler in cycle&quot;);
+        CollectionProperty empty = new CollectionProperty();
+        empty.setName(sampler.DATA_PROPERTY);
+        sampler.setData(empty);
+    }
+    while ( line != null){
+        lineCounter++;
+        String[] attributes = line.split(&quot;,&quot;);
+        String groupName = attributes[0];
+        groupCounter = attributes[1];
+        String requestMethod = attributes[2];
+        requestUrl = attributes[3];
+        if (requestMethod.equals(&quot;GET&quot;) &amp;&amp; groupCounter.equals(counter)  ){
+            log.info(&quot;Processing CSV: &quot; + groupName + &quot;,&quot; + groupCounter);
+            sampler.setName(groupName + &quot; [GET]&quot;); 
+            subPagesCounter++;
+            sampler.addURL(requestUrl);
+            // log.info(&quot;subPagesCounter: &quot; + subPagesCounter + &quot; GetData:&quot; + sampler.getData().size());
+            vars.put(&quot;JtlGroupCounter&quot;, groupCounter);
+            vars.put(&quot;JtlRequestUrl&quot;, requestUrl);
+        }
+        line = br.readLine();
+    }
+} catch (Exception ioe) {
+    log.info(&quot;Exception: &quot; + ioe.getMessage());
+    ResponseCode = 570;
+    ResponseMessage = &quot;FAILED BeanShell script - cannot read csv file&quot;;
+    IsSuccess = false;
+} finally {
+    if (br != null){
+        br.close();
+    }
+}
+
+try {
+    if (counterLimit == null || Integer.parseInt(counterLimit)  &gt; Integer.parseInt(groupCounter)  ){
+        log.info(&quot;Init phase steps:&quot;);
+        log.info(&quot;Updating STEPS_LIMIT to &quot; + groupCounter + &quot; =&gt; &quot; + vars.get(&quot;STEPS_LIMIT&quot;));
+        vars.put(&quot;STEPS_LIMIT&quot;, groupCounter);
+        log.info(&quot;Updated STEPS_LIMIT to =&gt; &quot; + vars.get(&quot;STEPS_LIMIT&quot;));
+        // LINES_LIMIT needed for API_BY_ONE_FROM_CSV to iterate all lines during one loop
+        vars.put(&quot;LINES_LIMIT&quot;, Integer.toString(lineCounter));
+        log.info(&quot;Updated LINES_LIMIT to =&gt; &quot; + vars.get(&quot;LINES_LIMIT&quot;));
+    }
+
+    if ( counter != null &amp;&amp; counter.equals(groupCounter) ){
+        log.info(&quot;Reset counter after all steps to null&quot;);
+        vars.put(&quot;GROUP_COUNTER&quot;,null);
+    } 
+} catch (Exception ex) {
+    log.info(&quot;Exception: &quot; + ex.getMessage());
+    ResponseCode = 580;
+    ResponseMessage = &quot;FAILED BeanShell script - cannot read/update variables&quot;;
+    IsSuccess = false;
+}
+log.info(&quot;Prepocessor finished: prepare embedded API requests from CSV&quot;);
+</stringProp>
+                <stringProp name="TestPlan.comments">File name with API requests in CSV format should come from variable:  STEPS_CSV_FILENAME, see java code</stringProp>
+              </BeanShellPreProcessor>
+              <hashTree/>
+              <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+                <collectionProp name="Asserion.test_strings">
+                  <stringProp name="49586">200</stringProp>
+                </collectionProp>
+                <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+                <boolProp name="Assertion.assume_success">false</boolProp>
+                <intProp name="Assertion.test_type">8</intProp>
+                <stringProp name="Assertion.scope">children</stringProp>
+                <stringProp name="Assertion.custom_message"></stringProp>
+              </ResponseAssertion>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+        </hashTree>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

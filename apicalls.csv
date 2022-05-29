@@ -1,0 +1,10 @@
+Page1,1,GET,http://localhost:8080/api/call1?id=1A
+Page1,1,GET,http://localhost:8080/api/call2?id=1B
+Page2,2,GET,http://localhost:8080/api/call3?id=2A
+Page2,2,GET,http://localhost:8080/api/call4?id=2B
+Page1,3,GET,http://localhost:8080/api/call1?id=3A
+Page1,3,GET,http://localhost:8080/api/call2?id=3B
+Page2,4,GET,http://localhost:8080/api/call3?id=4A
+Page2,4,GET,http://localhost:8080/api/call4?id=4B
+Page1,5,GET,http://localhost:8080/api/call1?id=5A
+Page1,5,GET,http://localhost:8080/api/call2?id=5B
