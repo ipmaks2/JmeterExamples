@@ -32,6 +32,7 @@
                 <stringProp name="Argument.name">loopMaxToTry</stringProp>
                 <stringProp name="Argument.value">10</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
+                <stringProp name="Argument.desc">KW Fails if more that 10 attempts</stringProp>
               </elementProp>
             </collectionProp>
           </elementProp>
@@ -85,10 +86,6 @@
                   <elementProp name="Accept" elementType="Header">
                     <stringProp name="Header.name">Accept</stringProp>
                     <stringProp name="Header.value">application/vnd.api+json</stringProp>
-                  </elementProp>
-                  <elementProp name="X-CSRF-TOKEN" elementType="Header">
-                    <stringProp name="Header.name">X-CSRF-TOKEN</stringProp>
-                    <stringProp name="Header.value">${CSRF_TOKEN}</stringProp>
                   </elementProp>
                 </collectionProp>
               </HeaderManager>
